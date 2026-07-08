@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mahudhurio">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#2563eb">
+    
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3589/3589030.png">
+    
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Smart Mahudhurio App","short_name":"Mahudhurio","start_url":".","display":"standalone","background_color":"#2563eb","theme_color":"#2563eb","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3589/3589030.png","sizes":"512x512","type":"image/png"}]}'>
+
+    <title>Smart Mahudhurio App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Maktaba za Offline -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        .nav-item.active { color: #2563eb; }
+        .nav-item.active svg { transform: translateY(-4px); transition: transform 0.2s; stroke: #2563eb; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        section { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .pin-input {
+            letter-spacing: 1.2em;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .circled-ip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid currentColor;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 8px;
+            font-weight: bold;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-24 text-slate-900">
+
+    <!-- Sehemu ya Login -->
+    <section id="section-login" class="fixed inset-0 z-[100] bg-blue-600 flex items-center justify-center p-6 text-center">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl space-y-6">
+            <div class="bg-blue-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 text-blue-600">
+                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Mfumo wa Mahudhurio 2026</h2>
+                <p class="text-xs text-slate-500 mt-2 italic font-medium tracking-tight">
+                    Smart app powered by Lyebu R <span class="circled-ip" style="border-color: #64748b; color: #64748b;">IP</span>
+                </p>
+            </div>
+            <div class="space-y-4 pt-4">
+                <input type="password" id="pin-input" maxlength="4" inputmode="numeric" class="w-full border-2 border-slate-100 rounded-2xl p-4 pin-input focus:border-blue-500 outline-none transition-all" placeholder="****">
+                <button onclick="handleLogin()" id="login-btn" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg active:scale-95 transition-all">
+                    Ingia Mfumo
+                </button>
+            </div>
+            <p id="login-error" class="text-xs text-red-500 font-bold hidden">PIN siyo sahihi.</p>
+        </div>
+    </section>
+
+    <!-- Maudhui ya App -->
+    <div id="app-content" class="hidden">
+        <!-- Header ya Juu -->
+        <header class="sticky top-0 z-40 bg-blue-600 text-white px-6 py-4 shadow-lg rounded-b-2xl flex justify-between items-center">
+            <div>
+                <h1 id="header-title" class="text-lg font-bold tracking-tight">Mfumo wa Mahudhurio 2026</h1>
+                <p class="text-[9px] text-blue-100 opacity-90 font-medium tracking-tight uppercase">
+                    Smart app powered by Lyebu R <span class="circled-ip">IP</span>
+                </p>
+            </div>
+            <button onclick="handleLogout()" class="bg-blue-500 p-2 rounded-xl active:bg-blue-700 transition-colors">
+                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            </button>
+        </header>
+
+        <main class="max-w-md mx-auto p-4 space-y-4">
+            
+            <!-- Dashboard / Nyumbani -->
+            <section id="section-home" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="text-blue-600 mb-2">
+                            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                        <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Wanafunzi</p>
+                        <h3 id="dash-total-students" class="text-2xl font-bold text-slate-800">0</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="text-green-600 mb-2">
+                            <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        </div>
+                        <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Leo Wapo</p>
+                        <h3 id="dash-present-today" class="text-2xl font-bold text-slate-800">0</h3>
+                    </div>
+                </div>
+
+                <!-- Orodha ya Watoro wa Leo -->
+                <div id="absentees-card" class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hidden">
+                    <h4 class="text-sm font-bold text-red-600 mb-3 flex items-center gap-2 uppercase tracking-tight">
+                        <svg viewBox="0 0 24 24" class="w-4 h-4"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="17" y1="8" x2="23" y2="14"></line><line x1="23" y1="8" x2="17" y2="14"></line></svg> 
+                        Watoro wa Leo
+                    </h4>
+                    <div id="absentees-list" class="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto custom-scroll">
+                        <!-- Watoro wataingizwa hapa -->
+                    </div>
+                </div>
+
+                <div class="bg-blue-600 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden text-center">
+                    <div class="relative z-10">
+                        <h4 class="font-bold text-lg mb-1 italic">Kazi ni Kipimo cha Utu!</h4>
+                        <p class="text-xs opacity-90 leading-relaxed">Hakikisha kila mwanafunzi anaingizwa na mahudhurio yamechukuliwa ipasavyo.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sehemu ya Usajili / Sajili -->
+            <section id="section-setup" class="hidden space-y-4">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                    <div class="flex gap-2">
+                        <select id="setup-form" class="flex-1 border p-3 rounded-2xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-sm" onchange="loadExistingNames()">
+                            <option value="Kidato cha 1">Kidato cha 1</option>
+                            <option value="Kidato cha 2">Kidato cha 2</option>
+                            <option value="Kidato cha 3">Kidato cha 3</option>
+                            <option value="Kidato cha 4">Kidato cha 4</option>
+                        </select>
+                        <select id="setup-stream" class="w-24 border p-3 rounded-2xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-sm" onchange="loadExistingNames()">
+                            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-slate-50">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ongeza Mwanafunzi Mgeni</p>
+                        <div class="flex gap-2">
+                            <input type="text" id="single-student-name" placeholder="Jina la mwanafunzi..." class="flex-1 border p-3 rounded-2xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                            <button onclick="addSingleStudent()" class="bg-blue-100 text-blue-600 p-3 rounded-2xl hover:bg-blue-200 transition-all">
+                                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-center">
+                        <label for="excel-upload" class="cursor-pointer block">
+                            <svg viewBox="0 0 24 24" class="mx-auto text-blue-500 mb-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            <p class="text-xs font-bold text-slate-600 uppercase">Pakia Orodha ya Excel</p>
+                            <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden" onchange="handleExcelUpload(event)">
+                        </label>
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-slate-50">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Wanafunzi Waliopo (Futa Aliyehama)</p>
+                        <div id="setup-current-list" class="space-y-2 max-h-60 overflow-y-auto custom-scroll">
+                            <!-- Orodha ya sasa -->
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center pt-2">
+                        <span id="student-count" class="text-xs font-bold text-slate-400 tracking-tighter uppercase">0 Wanafunzi</span>
+                        <button onclick="saveStudents()" class="bg-blue-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg active:scale-95 transition-all uppercase text-xs">
+                            Hifadhi Orodha
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sehemu ya Kuchukua Mahudhurio / Call List -->
+            <section id="section-attendance" class="hidden space-y-4 pb-20">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 sticky top-[72px] z-30">
+                    <div class="flex gap-2 mb-3">
+                        <select id="att-class" class="flex-1 border p-3 rounded-xl text-sm bg-slate-50" onchange="renderAttendanceList()">
+                            <optgroup label="Kidato 1"><option value="Kidato cha 1-A">1 A</option><option value="Kidato cha 1-B">1 B</option><option value="Kidato cha 1-C">1 C</option></optgroup>
+                            <optgroup label="Kidato 2"><option value="Kidato cha 2-A">2 A</option><option value="Kidato cha 2-B">2 B</option><option value="Kidato cha 2-C">2 C</option></optgroup>
+                            <optgroup label="Kidato 3"><option value="Kidato cha 3-A">3 A</option><option value="Kidato cha 3-B">3 B</option><option value="Kidato cha 3-C">3 C</option></optgroup>
+                            <optgroup label="Kidato 4"><option value="Kidato cha 4-A">4 A</option><option value="Kidato cha 4-B">4 B</option><option value="Kidato cha 4-C">4 C</option></optgroup>
+                        </select>
+                        <input type="date" id="attendance-date" class="flex-1 border p-3 rounded-xl text-sm bg-slate-50" onchange="renderAttendanceList()">
+                    </div>
+                    <input type="text" id="att-search" placeholder="Tafuta jina..." class="w-full px-4 py-3 bg-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-400" oninput="filterAttendanceList()">
+                </div>
+
+                <div id="attendance-list" class="space-y-3">
+                    <!-- Majina hapa -->
+                </div>
+
+                <div class="fixed bottom-24 right-4 left-4 max-w-md mx-auto z-40">
+                    <button onclick="saveDailyAttendance()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-bold shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        Hifadhi Mahudhurio
+                    </button>
+                </div>
+            </section>
+
+            <!-- Sehemu ya Ripoti -->
+            <section id="section-reports" class="hidden space-y-4">
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                    <div class="text-center mb-6 border-b pb-4">
+                        <h2 class="text-xl font-bold text-slate-800 uppercase tracking-tight">Mkongo Sekondari</h2>
+                        <p class="text-xs text-slate-600 font-semibold uppercase">SLP 40 Ikwiriri Rufiji</p>
+                        <p class="text-[10px] text-slate-400 uppercase mt-1 tracking-widest font-bold">Ripoti ya Mahudhurio</p>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-6">
+                        <select id="report-class" class="border p-3 rounded-2xl text-sm bg-slate-50" onchange="renderReports()">
+                            <option value="Kidato cha 1-A">1 A</option><option value="Kidato cha 1-B">1 B</option><option value="Kidato cha 1-C">1 C</option>
+                            <option value="Kidato cha 2-A">2 A</option><option value="Kidato cha 2-B">2 B</option><option value="Kidato cha 2-C">2 C</option>
+                            <option value="Kidato cha 3-A">3 A</option><option value="Kidato cha 3-B">3 B</option><option value="Kidato cha 3-C">3 C</option>
+                            <option value="Kidato cha 4-A">4 A</option><option value="Kidato cha 4-B">4 B</option><option value="Kidato cha 4-C">4 C</option>
+                        </select>
+                        <div class="flex gap-2">
+                            <button onclick="exportExcel()" class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 active:bg-emerald-200">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            </button>
+                            <button onclick="exportPDF()" class="p-3 bg-red-50 text-red-600 rounded-2xl border border-red-100 active:bg-red-200">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M12 18v-6"></path><path d="M8 15h8"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scroll border rounded-2xl shadow-inner">
+                        <table id="report-table" class="w-full text-left border-collapse bg-white">
+                            <thead id="report-header" class="bg-slate-100 text-[10px] uppercase font-bold text-slate-500"></thead>
+                            <tbody id="report-body" class="text-sm"></tbody>
+                        </table>
+                    </div>
+                    <div id="no-report-msg" class="text-center py-10 text-slate-300 italic hidden">Bado hakuna mahudhurio ya darasa hili...</div>
+                </div>
+                <button onclick="clearAllData()" class="w-full py-3 text-red-400 text-[10px] font-bold uppercase tracking-widest active:scale-95 transition-all">Futa Data Zote</button>
+            </section>
+        </main>
+
+        <!-- Menu Bar -->
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 py-3 flex justify-around items-center shadow-[0_-5px_20px_rgba(0,0,0,0.03)] z-50">
+            <button onclick="showSection('home')" id="btn-nav-home" class="nav-item active flex flex-col items-center gap-1">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span class="text-[9px] font-bold uppercase tracking-tighter">Mwanzo</span>
+            </button>
+            <button onclick="showSection('attendance')" id="btn-nav-attendance" class="nav-item flex flex-col items-center gap-1 text-slate-400">
+                <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                <span class="text-[9px] font-bold uppercase tracking-tighter">Call List</span>
+            </button>
+            <button onclick="showSection('reports')" id="btn-nav-reports" class="nav-item flex flex-col items-center gap-1 text-slate-400">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span class="text-[9px] font-bold uppercase tracking-tighter">Ripoti</span>
+            </button>
+            <button onclick="showSection('setup')" id="btn-nav-setup" class="nav-item flex flex-col items-center gap-1 text-slate-400">
+                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="16" y1="11" x2="22" y2="11"></line></svg>
+                <span class="text-[9px] font-bold uppercase tracking-tighter">Sajili</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl opacity-0 transition-all duration-300 pointer-events-none z-[200] text-sm font-bold text-center w-64">
+        Imefanikiwa!
+    </div>
+
+    <script>
+        // Data Store
+        let classData = JSON.parse(localStorage.getItem('shule_class_data')) || {};
+        let attendanceData = JSON.parse(localStorage.getItem('shule_attendance_v2')) || {};
+        let storedPin = localStorage.getItem('shule_app_pin');
+
+        window.onload = () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('attendance-date').value = today;
+            
+            if (!storedPin) {
+                document.getElementById('login-title').textContent = "PIN ya Usalama";
+                document.getElementById('login-desc').textContent = "Weka namba 4 za siri kwa mara ya kwanza.";
+                document.getElementById('login-btn').textContent = "Anza Sasa";
+            }
+        };
+
+        function handleLogin() {
+            const input = document.getElementById('pin-input').value;
+            if (input.length !== 4) return alert("PIN lazima iwe namba 4.");
+
+            if (!storedPin) {
+                localStorage.setItem('shule_app_pin', input);
+                storedPin = input;
+                unlockApp();
+            } else if (input === storedPin) {
+                unlockApp();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+                document.getElementById('pin-input').value = "";
+            }
+        }
+
+        function unlockApp() {
+            document.getElementById('section-login').classList.add('hidden');
+            document.getElementById('app-content').classList.remove('hidden');
+            updateDashboard();
+            loadExistingNames();
+        }
+
+        function handleLogout() {
+            if (confirm("Je, unataka kufunga app?")) location.reload();
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`section-${id}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('active', 'text-blue-600');
+                btn.classList.add('text-slate-400');
+            });
+            
+            const active = document.getElementById(`btn-nav-${id}`);
+            active.classList.add('active', 'text-blue-600');
+            active.classList.remove('text-slate-400');
+
+            if(id === 'home') updateDashboard();
+            if(id === 'attendance') renderAttendanceList();
+            if(id === 'reports') renderReports();
+            if(id === 'setup') loadExistingNames();
+        }
+
+        function updateDashboard() {
+            classData = JSON.parse(localStorage.getItem('shule_class_data')) || {};
+            attendanceData = JSON.parse(localStorage.getItem('shule_attendance_v2')) || {};
+
+            const today = new Date().toISOString().split('T')[0];
+            let total = 0, present = 0, absentList = [];
+
+            Object.values(classData).forEach(list => total += list.length);
+            
+            Object.keys(attendanceData).forEach(clsKey => {
+                if(attendanceData[clsKey][today]) {
+                    Object.entries(attendanceData[clsKey][today]).forEach(([name, status]) => {
+                        if (classData[clsKey] && classData[clsKey].includes(name)) {
+                            if(status === true) present++;
+                            else if(status === false) {
+                                const shortClass = clsKey.split('-')[0].replace('Kidato cha ', 'K') + clsKey.split('-')[1];
+                                absentList.push({name, class: shortClass});
+                            }
+                        }
+                    });
+                }
+            });
+
+            document.getElementById('dash-total-students').textContent = total;
+            document.getElementById('dash-present-today').textContent = present;
+
+            const card = document.getElementById('absentees-card');
+            const listEl = document.getElementById('absentees-list');
+            
+            if (absentList.length > 0) {
+                card.classList.remove('hidden');
+                listEl.innerHTML = absentList.map(item => `
+                    <div class="bg-red-50 p-3 rounded-xl flex justify-between items-center border border-red-100">
+                        <span class="font-bold text-slate-700">${item.name}</span>
+                        <span class="text-[10px] bg-red-200 text-red-700 px-2 py-1 rounded-lg font-bold">${item.class}</span>
+                    </div>
+                `).join('');
+            } else {
+                card.classList.add('hidden');
+            }
+        }
+
+        function addSingleStudent() {
+            const form = document.getElementById('setup-form').value;
+            const stream = document.getElementById('setup-stream').value;
+            const key = `${form}-${stream}`;
+            
+            const input = document.getElementById('single-student-name');
+            const name = input.value.trim();
+            if (!name) return;
+            
+            if (!classData[key]) classData[key] = [];
+            
+            if (classData[key].includes(name)) {
+                alert("Mwanafunzi huyu tayari yupo.");
+                return;
+            }
+
+            classData[key].push(name);
+            localStorage.setItem('shule_class_data', JSON.stringify(classData));
+            
+            input.value = "";
+            renderSetupList(key);
+            updateDashboard();
+            showToast("Jina limeongezwa!");
+        }
+
+        function handleExcelUpload(e) {
+            const form = document.getElementById('setup-form').value;
+            const stream = document.getElementById('setup-stream').value;
+            const key = `${form}-${stream}`;
+
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const workbook = XLSX.read(new Uint8Array(event.target.result), { type: 'array' });
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                const names = rows.map(r => r[0]).filter(n => n && n.toString().trim() !== "");
+                
+                if (!classData[key]) classData[key] = [];
+                classData[key] = [...new Set([...classData[key], ...names])];
+                localStorage.setItem('shule_class_data', JSON.stringify(classData));
+                
+                renderSetupList(key);
+                updateDashboard();
+                showToast("Orodha imepakiwa!");
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function loadExistingNames() {
+            const form = document.getElementById('setup-form').value;
+            const stream = document.getElementById('setup-stream').value;
+            const key = `${form}-${stream}`;
+            renderSetupList(key);
+        }
+
+        function renderSetupList(key) {
+            const list = classData[key] || [];
+            const container = document.getElementById('setup-current-list');
+            
+            document.getElementById('student-count').textContent = `${list.length} Wanafunzi`;
+
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-center py-4 text-slate-300 italic text-xs">Orodha ni tupu.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map((name, index) => `
+                <div class="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+                    <span class="text-sm font-bold text-slate-700">${name}</span>
+                    <button onclick="removeStudent('${key}', ${index})" class="text-red-400 active:text-red-600 transition-all p-1">
+                        <svg viewBox="0 0 24 24" class="w-4 h-4"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeStudent(key, index) {
+            const name = classData[key][index];
+            if (confirm(`Je, unataka kumfuta ${name} kabisa?`)) {
+                classData[key].splice(index, 1);
+                localStorage.setItem('shule_class_data', JSON.stringify(classData));
+                renderSetupList(key);
+                updateDashboard();
+                showToast("Mwanafunzi amefutwa.");
+            }
+        }
+
+        function saveStudents() {
+            showToast("Orodha imesasishwa!");
+            showSection('home');
+        }
+
+        function renderAttendanceList() {
+            const container = document.getElementById('attendance-list');
+            const classKey = document.getElementById('att-class').value;
+            const date = document.getElementById('attendance-date').value;
+            const students = classData[classKey] || [];
+            
+            if (students.length === 0) {
+                container.innerHTML = `<div class="p-10 text-center text-slate-300 font-bold">Usajili unahitajika kwa darasa hili.</div>`;
+                return;
+            }
+
+            const current = (attendanceData[classKey] && attendanceData[classKey][date]) || {};
+
+            container.innerHTML = students.map(name => {
+                const status = current[name]; // undefined means neutral
+                
+                const pColor = status === true ? 'bg-green-600 text-white shadow-lg' : 'bg-slate-100 text-slate-400';
+                const aColor = status === false ? 'bg-red-500 text-white shadow-lg' : 'bg-slate-100 text-slate-400';
+
+                return `
+                    <div class="student-row flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm" data-name="${name.toLowerCase()}">
+                        <span class="font-bold text-slate-700 truncate mr-4">${name}</span>
+                        <div class="flex gap-3">
+                            <button onclick="mark('${classKey}', '${name}', true)" 
+                                class="w-12 h-12 rounded-xl flex items-center justify-center transition-all ${pColor}">
+                                <svg viewBox="0 0 24 24" class="w-5 h-5" stroke-width="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </button>
+                            <button onclick="mark('${classKey}', '${name}', false)" 
+                                class="w-12 h-12 rounded-xl flex items-center justify-center transition-all ${aColor}">
+                                <svg viewBox="0 0 24 24" class="w-5 h-5" stroke-width="4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function mark(key, name, status) {
+            const date = document.getElementById('attendance-date').value;
+            if (!attendanceData[key]) attendanceData[key] = {};
+            if (!attendanceData[key][date]) attendanceData[key][date] = {};
+            attendanceData[key][date][name] = status;
+            renderAttendanceList();
+        }
+
+        function saveDailyAttendance() {
+            localStorage.setItem('shule_attendance_v2', JSON.stringify(attendanceData));
+            showToast("Imehifadhiwa!");
+            updateDashboard();
+            setTimeout(() => showSection('home'), 500);
+        }
+
+        function renderReports() {
+            const header = document.getElementById('report-header');
+            const body = document.getElementById('report-body');
+            const noData = document.getElementById('no-report-msg');
+            const classKey = document.getElementById('report-class').value;
+            
+            const students = classData[classKey] || [];
+            const history = attendanceData[classKey] || {};
+            const dates = Object.keys(history).sort().reverse().slice(0, 10); 
+
+            if (dates.length === 0 || students.length === 0) {
+                header.innerHTML = ""; body.innerHTML = "";
+                noData.classList.remove('hidden');
+                return;
+            } else {
+                noData.classList.add('hidden');
+            }
+
+            header.innerHTML = `<tr><th class="p-3 border-b">Jina</th>${dates.map(d => `<th class="p-2 border-b text-center font-bold text-slate-600">${d.slice(8,10)}/${d.slice(5,7)}</th>`).join('')}<th class="p-3 border-b text-right">%</th></tr>`;
+
+            body.innerHTML = students.map(name => {
+                let total = 0, present = 0;
+                const cells = dates.map(date => {
+                    const status = history[date][name];
+                    if (status !== undefined) { total++; if (status) present++; }
+                    return `<td class="p-2 border-b text-center text-sm font-bold">${status === true ? '<span class="text-green-600">✔</span>' : (status === false ? '<span class="text-red-600">✘</span>' : '-')}</td>`;
+                }).join('');
+                const pct = total > 0 ? Math.round((present / total) * 100) : 0;
+                return `<tr><td class="p-3 border-b font-bold text-slate-700">${name}</td>${cells}<td class="p-3 border-b text-right font-bold ${pct < 50 ? 'text-red-500' : 'text-blue-600'}">${pct}%</td></tr>`;
+            }).join('');
+        }
+
+        function exportExcel() {
+            renderReports();
+            const table = document.getElementById('report-table');
+            if (table.rows.length <= 1) return alert("Hakuna data.");
+            XLSX.writeFile(XLSX.utils.table_to_book(table), `Mahudhurio_${document.getElementById('report-class').value}_2026.xlsx`);
+        }
+
+        function exportPDF() {
+            renderReports();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'pt');
+            const classKey = document.getElementById('report-class').value;
+            
+            // Header
+            doc.setFontSize(18);
+            doc.setTextColor(37, 99, 235);
+            doc.text("SHULE YA SEKONDARI Mkongo", doc.internal.pageSize.getWidth() / 2, 40, { align: "center" });
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text("SLP 40 Ikwiriri - Rufiji", doc.internal.pageSize.getWidth() / 2, 55, { align: "center" });
+            doc.text(`RIPOTI YA MAHUDHURIO - ${classKey.toUpperCase()}`, doc.internal.pageSize.getWidth() / 2, 70, { align: "center" });
+
+            // Prepare Table Data (Convert Symbols to Text for PDF compatibility)
+            const headers = Array.from(document.querySelectorAll('#report-header th')).map(th => th.innerText);
+            const rows = Array.from(document.querySelectorAll('#report-body tr')).map(tr => {
+                return Array.from(tr.querySelectorAll('td')).map(td => {
+                    // Check if content is ✔ or ✘
+                    if (td.innerText.includes('✔')) return 'P';
+                    if (td.innerText.includes('✘')) return 'A';
+                    return td.innerText;
+                });
+            });
+
+            doc.autoTable({ 
+                head: [headers],
+                body: rows,
+                startY: 90,
+                theme: 'grid', 
+                styles: { fontSize: 8, font: "helvetica" },
+                headStyles: { fillColor: [37, 99, 235], textColor: 255 },
+                columnStyles: { 0: { cellWidth: 'auto', fontStyle: 'bold' } }
+            });
+            
+            doc.save(`Mahudhurio_Ripoti_Mkongo.pdf`);
+        }
+
+        function filterAttendanceList() {
+            const q = document.getElementById('att-search').value.toLowerCase();
+            document.querySelectorAll('.student-row').forEach(row => {
+                row.style.display = row.getAttribute('data-name').includes(q) ? 'flex' : 'none';
+            });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.replace('opacity-0', 'opacity-100');
+            setTimeout(() => t.classList.replace('opacity-100', 'opacity-0'), 3000);
+        }
+
+        function clearAllData() {
+            if (confirm("Je, unataka kufuta data zote? Kitendo hiki hakiwezi kurejeshwa.")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
